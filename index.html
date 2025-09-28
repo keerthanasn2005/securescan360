@@ -1,0 +1,1060 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SiteSecure360 - Advanced Website Intelligence</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc;
+        }
+        .spinner, .status-spinner {
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top: 3px solid #fff;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+        }
+        .status-spinner {
+             border-color: rgba(79, 70, 229, 0.2);
+             border-top-color: #4f46e5;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .sidebar-link.active {
+            background-color: #eef2ff;
+            color: #4f46e5;
+            font-weight: 600;
+        }
+        .status-item.active {
+            background-color: #eef2ff;
+            border-color: #c7d2fe;
+        }
+        .tab-button.active {
+            border-bottom-color: #4f46e5;
+            color: #4f46e5;
+            font-weight: 600;
+        }
+        .checklist-item-status {
+            transition: all 0.2s ease-in-out;
+        }
+        .checklist-item-status:hover {
+            transform: scale(1.1);
+        }
+        .chat-bubble {
+            max-width: 75%;
+        }
+        /* Styles for generated report */
+        #gemini-report pre {
+            background-color: #f3f4f6;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        #gemini-report code {
+            font-family: monospace;
+        }
+        @media print {
+            .no-print {
+                display: none !important;
+            }
+        }
+    </style>
+</head>
+<body class="text-gray-800">
+
+    <div class="flex h-screen">
+        <!-- Sidebar -->
+        <aside class="w-64 bg-white border-r border-gray-200 flex-col hidden md:flex">
+            <div class="p-6 flex items-center gap-3">
+                <div class="bg-indigo-600 p-2 rounded-lg">
+                    <i data-lucide="shield-check" class="text-white"></i>
+                </div>
+                <h1 class="text-xl font-bold text-gray-800">SiteSecure360</h1>
+            </div>
+            <nav class="flex-1 px-4 py-2">
+                <h2 class="px-2 mb-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">Navigation</h2>
+                <a href="#" id="new-audit-btn-sidebar" class="sidebar-link active flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors">
+                    <i data-lucide="file-plus-2" class="w-5 h-5"></i>
+                    <span>New Audit</span>
+                </a>
+                <a href="#" id="audit-history-btn-sidebar" class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors">
+                    <i data-lucide="history" class="w-5 h-5"></i>
+                    <span>Audit History</span>
+                </a>
+                 <a href="#" id="trends-btn-sidebar" class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors">
+                    <i data-lucide="line-chart" class="w-5 h-5"></i>
+                    <span>Historical Trends</span>
+                </a>
+
+                <h2 class="px-2 mt-6 mb-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">AI Integration</h2>
+                <div id="ai-integration-list" class="space-y-1 px-1">
+                    <!-- AI links will be injected by JS -->
+                </div>
+
+                <h2 class="px-2 mt-6 mb-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">Audit Categories</h2>
+                <div id="audit-categories-list" class="space-y-1 px-1">
+                    <!-- Categories will be injected by JS -->
+                </div>
+            </nav>
+            <div class="p-4 mt-auto">
+                <p class="text-center text-xs text-gray-400">&copy; 2025 SiteSecure360. All Rights Reserved.</p>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 p-6 md:p-10 overflow-y-auto">
+            <div id="main-content-area">
+                <!-- Header Section -->
+                <header id="main-header" class="mb-8">
+                    <div class="flex flex-wrap items-center justify-between gap-2">
+                        <h1 id="main-title" class="text-3xl md:text-4xl font-bold text-gray-900">Website Health Check</h1>
+                        <div class="bg-purple-100 text-purple-800 text-sm font-semibold inline-flex items-center px-3 py-1 rounded-full gap-2">
+                           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3V1m0 22v-2m4.6-4.6L20 20M4 4l3.4 3.4M1 12h2m18 0h2M4.6 19.4L8 16M20 4l-3.4 3.4"></path></svg>
+                            Integrated with Gemini AI
+                        </div>
+                    </div>
+                    <p id="main-subtitle" class="text-lg text-gray-500 mt-1">Comprehensive security, performance, SEO, and accessibility analysis for your website.</p>
+                </header>
+
+                <!-- URL Input Section -->
+                <div id="input-section" class="max-w-3xl mx-auto mt-12">
+                     <div class="bg-white p-8 rounded-2xl shadow-lg border border-gray-200">
+                        <div class="text-center mb-8">
+                            <div class="inline-block bg-indigo-100 p-3 rounded-xl">
+                                <i data-lucide="globe-2" class="w-8 h-8 text-indigo-600"></i>
+                            </div>
+                            <h2 class="text-2xl font-bold text-gray-900 mt-4">Start Your Website Audit</h2>
+                            <p class="text-gray-500">Get a comprehensive analysis of your website's health in just minutes.</p>
+                        </div>
+                        <div class="space-y-6">
+                            <div>
+                                <label for="url-input" class="block text-sm font-medium text-gray-700 mb-1">Your Website URL</label>
+                                <input type="url" id="url-input" placeholder="Enter your website URL (e.g., https://example.com)" class="w-full bg-gray-50 border border-gray-300 text-gray-900 placeholder-gray-400 text-md rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block p-3 transition duration-300">
+                            </div>
+                             <div>
+                                <label for="audit-name-input" class="block text-sm font-medium text-gray-700 mb-1">Audit Name (Optional)</label>
+                                <input type="text" id="audit-name-input" placeholder="Give this audit a custom name" class="w-full bg-gray-50 border border-gray-300 text-gray-900 placeholder-gray-400 text-md rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block p-3 transition duration-300">
+                            </div>
+                            <div id="competitor-inputs">
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Competitor URLs (Optional)</label>
+                                <div class="space-y-2">
+                                    <input type="url" class="competitor-url-input w-full bg-gray-50 border border-gray-300 text-gray-900 placeholder-gray-400 text-md rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block p-3 transition duration-300" placeholder="competitor1.com">
+                                    <input type="url" class="competitor-url-input w-full bg-gray-50 border border-gray-300 text-gray-900 placeholder-gray-400 text-md rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block p-3 transition duration-300" placeholder="competitor2.com">
+                                </div>
+                            </div>
+                        </div>
+                        <button id="scan-btn" class="mt-8 w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 px-8 rounded-lg text-lg transition duration-300 flex items-center justify-center gap-2">
+                            <i data-lucide="search" class="w-5 h-5"></i>
+                            <span>Start Comprehensive Audit</span>
+                        </button>
+                        <p id="error-message" class="text-red-500 mt-4 text-center hidden"></p>
+                     </div>
+                </div>
+
+                <!-- Progress Section -->
+                <div id="progress-section" class="max-w-3xl mx-auto mt-12 hidden">
+                    <div class="bg-white p-8 rounded-2xl shadow-lg border border-gray-200">
+                        <div class="text-center mb-8">
+                            <div class="inline-block bg-indigo-100 p-3 rounded-xl">
+                               <i data-lucide="loader-circle" class="w-8 h-8 text-indigo-600 animate-spin"></i>
+                            </div>
+                            <h2 class="text-2xl font-bold text-gray-900 mt-4">Analyzing Your Website</h2>
+                            <p class="text-gray-500">Please wait while we perform a comprehensive audit. This may take a minute.</p>
+                        </div>
+                        <div class="mb-4">
+                            <p id="progress-text" class="text-sm font-medium text-gray-600 text-center mb-2">Initiating Scan...</p>
+                            <div class="flex items-center gap-4">
+                                <div class="w-full bg-gray-200 rounded-full h-2.5 flex-1">
+                                    <div id="progress-bar" class="bg-indigo-600 h-2.5 rounded-full transition-all duration-100" style="width: 0%"></div>
+                                </div>
+                                <span id="progress-percentage" class="text-sm font-bold text-indigo-600">0%</span>
+                            </div>
+                        </div>
+                        <div id="status-list" class="space-y-3 mt-8"></div>
+                    </div>
+                </div>
+
+                <!-- Results Section -->
+                <div id="results-section" class="hidden"></div>
+                
+                <!-- History Section -->
+                <div id="history-section" class="hidden"></div>
+
+                <!-- Trends Section -->
+                <div id="trends-section" class="hidden"></div>
+
+                <!-- Category Checks Section -->
+                <div id="category-checks-section" class="hidden"></div>
+
+                <!-- AI Integration Section -->
+                <div id="ai-integration-section" class="hidden"></div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        const { jsPDF } = window.jspdf;
+        // All DOM element references
+        const urlInput = document.getElementById('url-input'),
+              scanBtn = document.getElementById('scan-btn'),
+              errorMessage = document.getElementById('error-message'),
+              inputSection = document.getElementById('input-section'),
+              progressSection = document.getElementById('progress-section'),
+              progressBar = document.getElementById('progress-bar'),
+              progressText = document.getElementById('progress-text'),
+              progressPercentage = document.getElementById('progress-percentage'),
+              statusList = document.getElementById('status-list'),
+              resultsSection = document.getElementById('results-section'),
+              historySection = document.getElementById('history-section'),
+              trendsSection = document.getElementById('trends-section'),
+              categoryChecksSection = document.getElementById('category-checks-section'),
+              aiIntegrationSection = document.getElementById('ai-integration-section'),
+              newAuditBtnSidebar = document.getElementById('new-audit-btn-sidebar'),
+              auditHistoryBtnSidebar = document.getElementById('audit-history-btn-sidebar'),
+              trendsBtnSidebar = document.getElementById('trends-btn-sidebar'),
+              auditCategoriesList = document.getElementById('audit-categories-list'),
+              aiIntegrationList = document.getElementById('ai-integration-list'),
+              mainHeader = document.getElementById('main-header'),
+              mainTitle = document.getElementById('main-title'),
+              mainSubtitle = document.getElementById('main-subtitle');
+
+        let radarChartInstance = null;
+        let trendsChartInstance = null;
+        let progressAnimation;
+
+        const AUDIT_CATEGORIES = {
+            security: { name: 'Security', icon: 'shield', color: 'text-red-500', description: 'Checks for vulnerabilities & threats.', checks: ['SSL/TLS Configuration', 'HTTP Strict Transport Security (HSTS)', 'Content Security Policy (CSP)', 'Clickjacking Protection (X-Frame-Options)', 'Insecure Cookies', 'SQL Injection Vulnerability'] },
+            performance: { name: 'Performance', icon: 'zap', color: 'text-orange-500', description: 'Analyzes loading speed & bottlenecks.', checks: ['Image Optimization', 'Render-Blocking Resources', 'Browser Caching Policies', 'Server Response Time', 'Content Delivery Network (CDN) Usage'] },
+            seo: { name: 'SEO', icon: 'trending-up', color: 'text-green-500', description: 'Validates search engine optimization.', checks: ['Meta Tags (Title & Description)', 'Header Tags (H1, H2)', 'Robots.txt & Sitemap', 'Broken Link Analysis', 'Mobile-Friendliness'] },
+            accessibility: { name: 'Accessibility', icon: 'person-standing', color: 'text-blue-500', description: 'Tests for WCAG compliance.', checks: ['Image Alt Attributes', 'Text Contrast Ratios', 'Descriptive Link Text', 'Keyboard Navigation', 'ARIA Landmark Roles'] },
+            privacy: { name: 'Privacy & Compliance', icon: 'lock', color: 'text-gray-500', description: 'Scans for GDPR/CCPA compliance.', checks: ['Cookie Consent Banner', 'Privacy Policy Page', 'Tracking Script Consent', 'Data Encryption Practices'] }
+        };
+
+        // Event Listeners
+        scanBtn.addEventListener('click', startScan);
+        urlInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') startScan(); });
+        newAuditBtnSidebar.addEventListener('click', (e) => { e.preventDefault(); showInputScreen(); });
+        auditHistoryBtnSidebar.addEventListener('click', (e) => { e.preventDefault(); showHistoryScreen(); });
+        trendsBtnSidebar.addEventListener('click', (e) => { e.preventDefault(); showTrendsScreen(); });
+
+        function initializeApp() {
+            renderAuditCategories();
+            renderAiIntegration();
+            lucide.createIcons();
+        }
+        
+        // --- Navigation & Screen Management ---
+        function renderAuditCategories() {
+            auditCategoriesList.innerHTML = '';
+            Object.keys(AUDIT_CATEGORIES).forEach(key => {
+                const category = AUDIT_CATEGORIES[key];
+                const categoryEl = document.createElement('a');
+                categoryEl.href = '#';
+                categoryEl.className = 'sidebar-link flex items-start gap-3 px-2 py-2 text-gray-600 hover:bg-gray-100 rounded-lg';
+                categoryEl.dataset.categoryId = key;
+                categoryEl.innerHTML = `
+                    <i data-lucide="${category.icon}" class="w-5 h-5 ${category.color} mt-0.5 flex-shrink-0"></i>
+                    <div>
+                        <span class="font-medium text-gray-700">${category.name}</span>
+                        <p class="text-xs text-gray-500">${category.description}</p>
+                    </div>`;
+                categoryEl.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    showCategoryChecksScreen(key);
+                });
+                auditCategoriesList.appendChild(categoryEl);
+            });
+        }
+
+        function renderAiIntegration() {
+            aiIntegrationList.innerHTML = `
+                <a href="#" id="gemini-info-btn" class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-purple-500"><path d="M12 3V1m0 22v-2m4.6-4.6L20 20M4 4l3.4 3.4M1 12h2m18 0h2M4.6 19.4L8 16M20 4l-3.4 3.4"></path></svg>
+                    <span>Gemini AI</span>
+                </a>
+                <a href="#" id="live-chat-btn" class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors">
+                    <i data-lucide="bot" class="w-5 h-5 text-indigo-500"></i>
+                    <span>Live AI Analyst</span>
+                </a>
+            `;
+            document.getElementById('gemini-info-btn').addEventListener('click', (e) => {
+                e.preventDefault();
+                showAiIntegrationScreen();
+            });
+            document.getElementById('live-chat-btn').addEventListener('click', (e) => {
+                e.preventDefault();
+                showLiveChat();
+            });
+        }
+
+        function setActiveSidebar(activeButton) {
+            document.querySelectorAll('.sidebar-link').forEach(btn => btn.classList.remove('active'));
+            if (activeButton) activeButton.classList.add('active');
+        }
+
+        function hideAllSections() {
+            [inputSection, progressSection, resultsSection, historySection, trendsSection, categoryChecksSection, aiIntegrationSection].forEach(s => s.classList.add('hidden'));
+            mainHeader.classList.add('hidden');
+        }
+
+        function showScreen(screen, sidebarBtn, title, subtitle) {
+            hideAllSections();
+            screen.classList.remove('hidden');
+            mainHeader.classList.remove('hidden');
+            mainTitle.textContent = title;
+            mainSubtitle.textContent = subtitle;
+            setActiveSidebar(sidebarBtn);
+        }
+
+        function showInputScreen() {
+            showScreen(inputSection, newAuditBtnSidebar, 'Website Health Check', 'Comprehensive security, performance, SEO, and accessibility analysis for your website.');
+            resultsSection.innerHTML = '';
+        }
+        
+        function showHistoryScreen() {
+            showScreen(historySection, auditHistoryBtnSidebar, 'Audit History', 'Review your past website audits.');
+            renderHistoryList();
+        }
+
+        function showTrendsScreen() {
+            showScreen(trendsSection, trendsBtnSidebar, 'Historical Trends', 'Visualize your website\'s audit scores over time.');
+            renderTrendsChart();
+        }
+
+        function showCategoryChecksScreen(categoryId) {
+            const category = AUDIT_CATEGORIES[categoryId];
+            showScreen(categoryChecksSection, document.querySelector(`.sidebar-link[data-category-id="${categoryId}"]`), `${category.name} Checks`, `List of all checks performed under the ${category.name} category.`);
+            renderCategoryChecks(categoryId);
+        }
+
+        function showAiIntegrationScreen() {
+            showScreen(aiIntegrationSection, document.getElementById('gemini-info-btn'), 'Gemini AI Integration', 'Learn how our AI enhances your audit results.');
+            renderAiIntegrationContent();
+        }
+        
+        function showLiveChat() {
+            const history = JSON.parse(localStorage.getItem('auditHistory')) || [];
+            if (history.length > 0) {
+                viewSavedReport(history[0].id, 'tab-chat');
+                setActiveSidebar(document.getElementById('live-chat-btn'));
+            } else {
+                alert("Please run an audit first to use the AI Analyst chat.");
+            }
+        }
+
+        // --- Audit Process ---
+        function startScan() {
+            const url = urlInput.value.trim();
+            if (!isValidUrl(url)) {
+                errorMessage.textContent = 'Please enter a valid URL (e.g., https://example.com)';
+                errorMessage.classList.remove('hidden');
+                return;
+            }
+            errorMessage.classList.add('hidden');
+            hideAllSections();
+            progressSection.classList.remove('hidden');
+            setActiveSidebar(null);
+            
+            runBackendAudit(url);
+        }
+        
+        function setupProgressScreen() {
+            statusList.innerHTML = '';
+            progressBar.style.width = '0%';
+            progressPercentage.textContent = '0%';
+            progressText.textContent = 'Initiating Scan...';
+            
+            const categories = Object.keys(AUDIT_CATEGORIES).map(key => ({
+                id: key,
+                name: AUDIT_CATEGORIES[key].name,
+                icon: AUDIT_CATEGORIES[key].icon
+            }));
+            
+            categories.forEach(cat => {
+                const item = document.createElement('div');
+                item.id = `status-${cat.id}`;
+                item.className = 'status-item flex items-center justify-between p-4 rounded-lg bg-white border border-gray-200 transition-all';
+                item.innerHTML = `<div class="flex items-center gap-3"><i data-lucide="${cat.icon}" class="w-5 h-5 text-gray-400"></i><span class="font-medium text-gray-600">${cat.name}</span></div><div id="status-icon-${cat.id}" class="w-5 h-5"></div>`;
+                statusList.appendChild(item);
+            });
+
+            lucide.createIcons();
+        }
+
+        function updateCategoryStatus(categoryId, status) {
+            const item = document.getElementById(`status-${categoryId}`);
+            const iconContainer = document.getElementById(`status-icon-${categoryId}`);
+            const iconEl = item.querySelector('i[data-lucide], svg');
+
+            if (!item || !iconContainer || !iconEl) return;
+
+            document.querySelectorAll('.status-item').forEach(el => el.classList.remove('active'));
+            iconContainer.innerHTML = '';
+
+            if (status === 'active') {
+                item.classList.add('active');
+                iconContainer.innerHTML = '<div class="status-spinner"></div>';
+            } else if (status === 'done') {
+                item.classList.remove('active');
+                iconContainer.innerHTML = '<i data-lucide="check-circle-2" class="w-5 h-5 text-green-500"></i>';
+                iconEl.classList.remove('text-gray-400');
+                iconEl.classList.add(AUDIT_CATEGORIES[categoryId].color);
+                lucide.createIcons();
+            }
+        }
+        
+        async function runBackendAudit(url) {
+            setupProgressScreen();
+            
+            // Animate the progress bar to give user feedback during the long request
+            let currentProgress = 0;
+            if (progressAnimation) clearInterval(progressAnimation);
+            progressAnimation = setInterval(() => {
+                currentProgress += (90 - currentProgress) * 0.05; // Slowly approach 90%
+                progressBar.style.width = `${currentProgress}%`;
+                progressPercentage.textContent = `${Math.round(currentProgress)}%`;
+            }, 200);
+            progressText.textContent = "Running audits... this may take up to a minute."
+
+            try {
+                const response = await fetch('http://localhost:3000/api/audit', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ url }),
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || 'Network response was not ok');
+                }
+
+                const auditData = await response.json();
+                
+                clearInterval(progressAnimation);
+                progressBar.style.width = '100%';
+                progressPercentage.textContent = '100%';
+                progressText.textContent = 'Compiling report...';
+
+                setTimeout(() => {
+                    progressSection.classList.add('hidden');
+                    const auditName = document.getElementById('audit-name-input').value;
+                    const newAuditId = saveAuditToHistory(url, auditName, auditData);
+                    displayResults(url, auditName, auditData, newAuditId);
+                }, 500);
+
+            } catch (error) {
+                clearInterval(progressAnimation);
+                console.error('Failed to fetch audit results:', error);
+                progressSection.classList.add('hidden');
+                showInputScreen();
+                errorMessage.textContent = `Error: ${error.message}. Make sure your backend server is running.`;
+                errorMessage.classList.remove('hidden');
+            }
+        }
+        
+        function animateProgress(start, end, duration) {
+            if (progressAnimation) clearInterval(progressAnimation);
+            let current = start;
+            const step = (end - start) / (duration / 20);
+            progressAnimation = setInterval(() => {
+                current += step;
+                if (current >= end) {
+                    clearInterval(progressAnimation);
+                    progressBar.style.width = `${end}%`;
+                    progressPercentage.textContent = `${Math.round(end)}%`;
+                    return;
+                }
+                progressBar.style.width = `${current}%`;
+                progressPercentage.textContent = `${Math.round(current)}%`;
+            }, 20);
+        }
+
+        // --- Results Display & Interaction ---
+        function displayResults(url, auditName, savedAuditData, auditId, activeTab = 'tab-checklist') {
+            if (!savedAuditData) {
+                return;
+            }
+            
+            hideAllSections();
+            renderReport(url, savedAuditData, auditId, activeTab);
+            resultsSection.classList.remove('hidden');
+            setActiveSidebar(null);
+        }
+
+        function renderReport(url, auditData, auditId, activeTab) {
+            const overallScore = Math.round(Object.keys(AUDIT_CATEGORIES).reduce((acc, key) => acc + (auditData[key]?.score || 0), 0) / Object.keys(AUDIT_CATEGORIES).length);
+            
+            resultsSection.innerHTML = `
+                <div id="report-content-wrapper">
+                    <!-- Header -->
+                    <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
+                        <div>
+                            <h2 class="text-2xl font-bold text-gray-900 break-words">Audit of ${new URL(url).hostname}</h2>
+                            <p class="text-gray-500">Completed on ${new Date().toLocaleString()}</p>
+                        </div>
+                        <div class="flex items-center gap-2 mt-4 md:mt-0 no-print">
+                            <button id="export-pdf-btn" class="bg-white hover:bg-gray-100 text-gray-700 font-semibold py-2 px-4 border border-gray-300 rounded-lg shadow-sm flex items-center gap-2"><i data-lucide="download" class="w-4 h-4"></i>Export</button>
+                            <button id="new-audit-btn-main" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg">New Audit</button>
+                        </div>
+                    </div>
+                    <div id="report-content">
+                        <!-- Overall Score & Tech Stack -->
+                        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+                            <div class="lg:col-span-2 rounded-2xl p-8 text-white ${getScoreColor(overallScore, false, true)}">
+                                <h3 class="text-6xl md:text-8xl font-bold text-center">${overallScore}</h3>
+                                <p class="text-lg md:text-xl font-semibold opacity-90 text-center">Overall Health Score</p>
+                            </div>
+                            <div class="bg-white p-6 rounded-2xl shadow-lg border border-gray-200">
+                                <h3 class="text-xl font-bold text-gray-900 flex items-center gap-2"><i data-lucide="cpu" class="w-6 h-6 text-indigo-600"></i>Technology Stack</h3>
+                                <div class="flex flex-wrap gap-2 mt-4">
+                                     ${ (Array.isArray(auditData.techStack) && auditData.techStack.length > 0 && auditData.techStack[0] !== 'Not Detected')
+                                        ? auditData.techStack.map(tech => `<span class="bg-gray-100 text-gray-800 text-sm font-medium px-2.5 py-1 rounded-full">${tech}</span>`).join('')
+                                        : '<span class="text-gray-500 text-sm">Could not detect specific technologies.</span>'
+                                    }
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Category Cards -->
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
+                            ${Object.keys(AUDIT_CATEGORIES).map(key => createCategoryCardHTML(auditData[key])).join('')}
+                        </div>
+                        
+                        <!-- Radar Chart -->
+                        <div class="mt-12 bg-white p-8 rounded-2xl shadow-lg border border-gray-200">
+                             <h2 class="text-3xl font-bold text-gray-900 text-center">Score Overview</h2>
+                             <div class="max-w-2xl mx-auto mt-6"><canvas id="radar-chart"></canvas></div>
+                        </div>
+
+                        <!-- Competitive Analysis -->
+                        ${auditData.competitors && auditData.competitors.length > 0 ? createCompetitorAnalysisHTML(auditData) : ''}
+
+                        <!-- Tabs -->
+                        <div class="mt-12 border-b border-gray-200 no-print">
+                            <nav class="-mb-px flex space-x-8" aria-label="Tabs">
+                                <button id="tab-checklist" class="tab-button">Action Checklist</button>
+                                <button id="tab-gemini" class="tab-button">Gemini Solution</button>
+                                <button id="tab-chat" class="tab-button">Chat with AI Analyst</button>
+                            </nav>
+                        </div>
+                        <div id="tab-content-checklist" class="mt-8"></div>
+                        <div id="tab-content-gemini" class="mt-8 hidden"></div>
+                        <div id="tab-content-chat" class="mt-8 hidden"></div>
+                    </div>
+                </div>`;
+            
+            document.getElementById('tab-content-checklist').innerHTML = createActionChecklistHTML(auditData);
+            document.getElementById('tab-content-gemini').innerHTML = createGeminiSolutionHTML();
+            document.getElementById('tab-content-chat').innerHTML = createChatInterfaceHTML();
+
+            document.getElementById('new-audit-btn-main').addEventListener('click', showInputScreen);
+            document.getElementById('export-pdf-btn').addEventListener('click', exportToPDF);
+            document.getElementById('gemini-btn').addEventListener('click', () => generateAIReport(auditData));
+            document.getElementById('chat-send-btn').addEventListener('click', () => handleChatMessage(auditData));
+            document.getElementById('chat-input').addEventListener('keypress', (e) => { if (e.key === 'Enter') handleChatMessage(auditData); });
+            
+            setupTabs(activeTab);
+            setupChecklistInteractions(auditData, auditId);
+            createRadarChart(auditData);
+            lucide.createIcons();
+        }
+
+        function setupTabs(activeTabId = 'tab-checklist') {
+            const tabs = [
+                { btn: 'tab-checklist', content: 'tab-content-checklist' },
+                { btn: 'tab-gemini', content: 'tab-content-gemini' },
+                { btn: 'tab-chat', content: 'tab-content-chat' },
+            ];
+            
+            tabs.forEach(tab => {
+                const tabBtn = document.getElementById(tab.btn);
+                const tabContent = document.getElementById(tab.content);
+                
+                tabBtn.addEventListener('click', () => {
+                    tabs.forEach(t => {
+                        document.getElementById(t.btn).classList.remove('active');
+                        document.getElementById(t.content).classList.add('hidden');
+                    });
+                    tabBtn.classList.add('active');
+                    tabContent.classList.remove('hidden');
+                });
+            });
+
+            // Activate the initial tab
+            document.getElementById(activeTabId).click();
+        }
+
+        // --- Feature-Specific Render Functions ---
+        
+        function createActionChecklistHTML(auditData) {
+            let html = '';
+            Object.keys(AUDIT_CATEGORIES).forEach(key => {
+                const category = auditData[key];
+                if (category && category.issues && category.issues.length > 0) {
+                    html += `<h2 class="text-3xl font-bold text-gray-900 mt-8 mb-4">${category.title} Checklist</h2>`;
+                    html += '<div class="space-y-4">';
+                    category.issues.forEach((issue, index) => {
+                        html += `
+                            <div class="bg-white p-6 rounded-2xl border border-gray-200">
+                                <div class="flex justify-between items-start">
+                                    <h3 class="text-xl font-bold text-gray-800">${issue.title}</h3>
+                                    <div class="flex items-center gap-2">
+                                        ${getPriorityBadge(issue.priority)}
+                                        <div class="flex items-center gap-1 p-1 bg-gray-100 rounded-full">
+                                            <button data-category="${key}" data-index="${index}" data-status="todo" class="checklist-item-status p-1.5 rounded-full ${issue.status === 'todo' ? 'bg-gray-400 text-white' : 'text-gray-400 hover:bg-gray-200'}"><i data-lucide="circle" class="w-4 h-4"></i></button>
+                                            <button data-category="${key}" data-index="${index}" data-status="inprogress" class="checklist-item-status p-1.5 rounded-full ${issue.status === 'inprogress' ? 'bg-yellow-500 text-white' : 'text-yellow-500 hover:bg-yellow-100'}"><i data-lucide="circle-dashed" class="w-4 h-4"></i></button>
+                                            <button data-category="${key}" data-index="${index}" data-status="completed" class="checklist-item-status p-1.5 rounded-full ${issue.status === 'completed' ? 'bg-green-500 text-white' : 'text-green-500 hover:bg-green-100'}"><i data-lucide="check-circle" class="w-4 h-4"></i></button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <p class="text-gray-600 mt-2">${issue.description}</p>
+                                <div class="mt-4 bg-gray-50 p-4 rounded-lg border border-gray-200">
+                                    <p class="font-semibold text-green-700 flex items-center gap-2"><i data-lucide="wrench" class="w-4 h-4"></i>Recommendation</p>
+                                    <p class="text-gray-700 mt-1">${issue.recommendation}</p>
+                                </div>
+                            </div>`;
+                    });
+                    html += '</div>';
+                }
+            });
+            return html;
+        }
+
+        function createGeminiSolutionHTML() {
+            return `<div id="gemini-section" class="bg-white p-8 rounded-2xl shadow-lg border border-gray-200">
+                        <div id="gemini-header" class="text-center">
+                            <h2 id="gemini-title" class="text-3xl font-bold text-gray-900">AI-Powered Action Plan</h2>
+                            <p id="gemini-subtitle" class="text-gray-500 mt-2 max-w-2xl mx-auto">Let our AI assistant analyze these findings and generate a prioritized, step-by-step plan with code snippets to improve your website's health.</p>
+                        </div>
+                        <div id="gemini-actions" class="mt-6 text-center">
+                            <button id="gemini-btn" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-6 rounded-lg text-lg transition duration-300">✨ Generate Action Plan</button>
+                            <button id="download-gemini-pdf-btn" class="bg-gray-200 text-gray-800 font-bold py-3 px-6 rounded-lg text-lg transition duration-300 hidden ml-4"><i data-lucide="download" class="w-5 h-5 mr-2"></i>Download PDF</button>
+                        </div>
+                        <div id="gemini-report" class="prose max-w-none mt-8"></div>
+                    </div>`;
+        }
+        
+        function createChatInterfaceHTML() {
+            return `<div class="bg-white rounded-2xl shadow-lg border border-gray-200 h-[600px] flex flex-col">
+                        <div class="p-4 border-b">
+                            <h3 class="text-xl font-bold text-gray-900 text-center">Chat with Your AI Analyst</h3>
+                        </div>
+                        <div id="chat-log" class="flex-1 p-4 overflow-y-auto space-y-4">
+                            <div class="flex justify-start">
+                                <div class="chat-bubble bg-gray-100 text-gray-800 p-3 rounded-lg">
+                                    <p>Hello! I'm your AI Analyst. Ask me anything about this audit report. For example, "Explain the security issues in simple terms" or "Which performance fix is easiest?"</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="p-4 border-t bg-gray-50 flex items-center gap-2">
+                            <input type="text" id="chat-input" placeholder="Ask a question about your report..." class="w-full bg-white border border-gray-300 rounded-lg p-3">
+                            <button id="chat-send-btn" class="bg-indigo-600 text-white p-3 rounded-lg hover:bg-indigo-700"><i data-lucide="send" class="w-5 h-5"></i></button>
+                        </div>
+                    </div>`;
+        }
+        
+        function createCompetitorAnalysisHTML(auditData) {
+            let html = `<div class="mt-12 bg-white p-8 rounded-2xl shadow-lg border border-gray-200">
+                <h2 class="text-3xl font-bold text-gray-900 text-center">Competitive Analysis</h2>
+                <div class="overflow-x-auto mt-6">
+                    <table class="w-full text-left">
+                        <thead>
+                            <tr class="border-b">
+                                <th class="p-4 font-semibold">Metric</th>
+                                <th class="p-4 font-semibold text-center text-indigo-600">Your Site</th>
+                                ${auditData.competitors.map(c => `<th class="p-4 font-semibold text-center">${new URL(c.url).hostname}</th>`).join('')}
+                            </tr>
+                        </thead>
+                        <tbody>`;
+            Object.keys(AUDIT_CATEGORIES).forEach(key => {
+                html += `<tr class="border-b">
+                            <td class="p-4 font-medium whitespace-nowrap">${AUDIT_CATEGORIES[key].name}</td>
+                            <td class="p-4 font-bold text-xl md:text-2xl text-center ${getScoreColor(auditData[key]?.score)}">${auditData[key]?.score || 'N/A'}</td>
+                            ${auditData.competitors.map(c => `<td class="p-4 font-bold text-xl md:text-2xl text-center ${getScoreColor(c.data[key]?.score)}">${c.data[key]?.score || 'N/A'}</td>`).join('')}
+                        </tr>`;
+            });
+            html += `</tbody></table></div></div>`;
+            return html;
+        }
+
+        // --- Feature-Specific Logic ---
+        
+        function setupChecklistInteractions(auditData, auditId) {
+            document.querySelectorAll('.checklist-item-status').forEach(button => {
+                button.addEventListener('click', () => {
+                    const { category, index, status } = button.dataset;
+                    auditData[category].issues[index].status = status;
+                    updateAuditInHistory(auditId, auditData);
+                    // Re-render the checklist to update UI state
+                    document.getElementById('tab-content-checklist').innerHTML = createActionChecklistHTML(auditData);
+                    setupChecklistInteractions(auditData, auditId); // Re-attach listeners
+                    lucide.createIcons();
+                });
+            });
+        }
+
+        async function generateAIReport(auditData) {
+            const geminiReport = document.getElementById('gemini-report');
+            const geminiBtn = document.getElementById('gemini-btn');
+            const downloadBtn = document.getElementById('download-gemini-pdf-btn');
+            
+            geminiBtn.disabled = true;
+            geminiBtn.innerHTML = '<div class="spinner"></div> Generating...';
+            geminiReport.innerHTML = ''; // Clear previous report
+            downloadBtn.classList.add('hidden');
+
+            let prompt = `You are an expert web development and security consultant. Based on the following website audit issues, provide a prioritized, step-by-step action plan for the website owner. Your response MUST be well-formatted HTML. Use headings (h3, h4), paragraphs (p), lists (ul, li), and bold tags (strong) where appropriate. For any technical recommendations that involve code (like setting server headers), you MUST provide code snippets for both Apache (.htaccess) and Nginx (nginx.conf) inside separate <pre><code>...</code></pre> blocks. Here are the issues found during the audit:\n\n`;
+            for (const key in auditData) {
+                const category = auditData[key];
+                if (category && Array.isArray(category.issues) && category.issues.length > 0) {
+                    prompt += `Category: ${category.title}\n`;
+                    category.issues.forEach(issue => {
+                        prompt += `- Issue: ${issue.title} (Priority: ${issue.priority})\n  - Description: ${issue.description}\n  - Recommendation: ${issue.recommendation}\n`;
+                    });
+                    prompt += '\n';
+                }
+            }
+
+            try {
+                let chatHistory = [{ role: "user", parts: [{ text: prompt }] }];
+                const payload = { contents: chatHistory };
+                const apiKey = "Gemini API (gen-lang-client-0188157341)";
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+                const response = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+                if (!response.ok) throw new Error(`API Error: ${response.status} ${response.statusText}`);
+                const result = await response.json();
+                if (result.candidates && result.candidates[0]?.content?.parts?.[0]?.text) {
+                    geminiReport.innerHTML = result.candidates[0].content.parts[0].text;
+                    downloadBtn.classList.remove('hidden');
+                    downloadBtn.addEventListener('click', downloadGeminiReportAsPDF);
+                    lucide.createIcons();
+                } else { throw new Error("Unexpected API response structure."); }
+            } catch (error) {
+                console.error("Gemini API call failed:", error);
+                geminiReport.innerHTML = `<p class="text-red-500">Sorry, the AI report could not be generated. ${error.message}</p>`;
+            } finally {
+                geminiBtn.disabled = false;
+                geminiBtn.innerHTML = '✨ Regenerate Action Plan';
+            }
+        }
+        
+        async function downloadGeminiReportAsPDF() {
+            const reportContent = document.getElementById('gemini-report');
+            if (!reportContent || !reportContent.innerHTML) {
+                alert("Please generate the report first.");
+                return;
+            }
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF({ unit: 'pt', format: 'a4' });
+            
+            doc.html(reportContent, {
+                callback: function (doc) {
+                    doc.save('gemini-ai-report.pdf');
+                },
+                margin: [40, 40, 40, 40],
+                autoPaging: 'text',
+                x: 0,
+                y: 0,
+                width: 515, // A4 width in points minus margins
+                windowWidth: 800
+            });
+        }
+
+        async function handleChatMessage(auditData) {
+            const chatInput = document.getElementById('chat-input');
+            const chatLog = document.getElementById('chat-log');
+            const userMessage = chatInput.value.trim();
+            if (!userMessage) return;
+
+            chatLog.innerHTML += `<div class="flex justify-end"><div class="chat-bubble bg-indigo-600 text-white p-3 rounded-lg"><p>${userMessage}</p></div></div>`;
+            chatInput.value = '';
+            chatLog.scrollTop = chatLog.scrollHeight;
+            
+            const thinkingBubble = `<div class="flex justify-start" id="thinking-bubble"><div class="chat-bubble bg-gray-100 text-gray-800 p-3 rounded-lg"><div class="flex items-center gap-2"><div class="status-spinner"></div><span>Thinking...</span></div></div></div>`;
+            chatLog.insertAdjacentHTML('beforeend', thinkingBubble);
+            chatLog.scrollTop = chatLog.scrollHeight;
+
+            let prompt = `You are a helpful AI website analyst. A user is asking a question about their website audit report. Use the following report data to answer their question concisely. \n\n--- AUDIT REPORT SUMMARY --- \n`;
+            for (const key in auditData) {
+                const category = auditData[key];
+                if (category && Array.isArray(category.issues)) {
+                    prompt += `Category: ${category.title} (Score: ${category.score})\n`;
+                    category.issues.forEach(issue => { prompt += `- Issue: ${issue.title} (Priority: ${issue.priority})\n`; });
+                }
+            }
+            prompt += `\n--- USER QUESTION ---\n${userMessage}`;
+
+            try {
+                let chatHistory = [{ role: "user", parts: [{ text: prompt }] }];
+                const payload = { contents: chatHistory };
+                const apiKey = "Gemini API (gen-lang-client-0188157341)";
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+                const response = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+                if (!response.ok) throw new Error(`API Error: ${response.status} ${response.statusText}`);
+                const result = await response.json();
+                if (result.candidates && result.candidates[0]?.content?.parts?.[0]?.text) {
+                    const aiResponse = result.candidates[0].content.parts[0].text;
+                    document.getElementById('thinking-bubble').remove();
+                    chatLog.innerHTML += `<div class="flex justify-start"><div class="chat-bubble bg-gray-100 text-gray-800 p-3 rounded-lg"><p>${aiResponse}</p></div></div>`;
+                } else { throw new Error("Unexpected API response structure."); }
+            } catch (error) {
+                 document.getElementById('thinking-bubble').innerHTML = `<div class="chat-bubble bg-red-100 text-red-800 p-3 rounded-lg"><p>Sorry, I couldn't process that. ${error.message}</p></div>`;
+            } finally {
+                chatLog.scrollTop = chatLog.scrollHeight;
+            }
+        }
+
+        // --- History & Trends ---
+        function saveAuditToHistory(url, name, auditData) {
+            const history = JSON.parse(localStorage.getItem('auditHistory')) || [];
+            const newAuditId = Date.now();
+            const newAudit = { id: newAuditId, url: url, name: name || new URL(url).hostname, date: new Date().toISOString(), data: auditData };
+            history.unshift(newAudit);
+            localStorage.setItem('auditHistory', JSON.stringify(history.slice(0, 20)));
+            return newAuditId;
+        }
+
+        function updateAuditInHistory(auditId, updatedData) {
+            const history = JSON.parse(localStorage.getItem('auditHistory')) || [];
+            const auditIndex = history.findIndex(a => a.id == auditId);
+            if (auditIndex > -1) {
+                history[auditIndex].data = updatedData;
+                localStorage.setItem('auditHistory', JSON.stringify(history));
+            }
+        }
+
+        function renderHistoryList() {
+            const history = JSON.parse(localStorage.getItem('auditHistory')) || [];
+            let html = `<h2 class="text-3xl font-bold text-gray-900 mb-6">Audit History</h2>`;
+            if (history.length === 0) {
+                html += `<div class="text-center bg-white p-8 rounded-2xl border border-gray-200"><p class="text-gray-500">No past audits found. Run a new audit to get started!</p></div>`;
+            } else {
+                html += `<div class="space-y-4">`;
+                history.forEach(audit => {
+                    const overallScore = Math.round(Object.keys(AUDIT_CATEGORIES).reduce((acc, key) => acc + (audit.data[key]?.score || 0), 0) / Object.keys(AUDIT_CATEGORIES).length);
+                    html += `
+                        <div class="bg-white p-4 rounded-2xl border border-gray-200 flex items-center justify-between">
+                            <div>
+                                <p class="font-bold text-lg text-gray-800">${audit.name}</p>
+                                <p class="text-sm text-gray-500">${new URL(audit.url).hostname}</p>
+                                <p class="text-xs text-gray-400 mt-1">${new Date(audit.date).toLocaleString()}</p>
+                            </div>
+                            <div class="flex items-center gap-4">
+                                <div class="text-right">
+                                    <p class="font-bold text-2xl ${getScoreColor(overallScore)}">${overallScore}</p>
+                                    <p class="text-sm text-gray-500">Overall Score</p>
+                                </div>
+                                <button class="view-report-btn bg-indigo-100 text-indigo-700 hover:bg-indigo-200 font-semibold py-2 px-4 rounded-lg transition" data-audit-id="${audit.id}">View Report</button>
+                            </div>
+                        </div>`;
+                });
+                html += `</div>`;
+            }
+            historySection.innerHTML = html;
+            document.querySelectorAll('.view-report-btn').forEach(btn => btn.addEventListener('click', (e) => viewSavedReport(e.currentTarget.dataset.auditId)));
+        }
+        
+        function viewSavedReport(auditId, activeTab = 'tab-checklist') {
+            const history = JSON.parse(localStorage.getItem('auditHistory')) || [];
+            const audit = history.find(a => a.id == auditId);
+            if (audit) {
+                displayResults(audit.url, audit.name, audit.data, audit.id, activeTab);
+            }
+        }
+
+        function renderTrendsChart() {
+            const history = JSON.parse(localStorage.getItem('auditHistory') || '[]').reverse();
+            if (history.length < 2) {
+                trendsSection.innerHTML = `<div class="text-center bg-white p-8 rounded-2xl border"><p class="text-gray-500">You need at least two audits to see historical trends.</p></div>`;
+                return;
+            }
+            
+            trendsSection.innerHTML = `<div class="bg-white p-8 rounded-2xl shadow-lg border"><canvas id="trends-chart"></canvas></div>`;
+            const ctx = document.getElementById('trends-chart').getContext('2d');
+            const labels = history.map(a => new Date(a.date).toLocaleDateString());
+            const datasets = Object.keys(AUDIT_CATEGORIES).map(key => {
+                const category = AUDIT_CATEGORIES[key];
+                return {
+                    label: category.name,
+                    data: history.map(a => a.data[key]?.score || 0),
+                    borderColor: `hsl(${Math.random() * 360}, 70%, 50%)`,
+                    tension: 0.1
+                };
+            });
+            
+            if (trendsChartInstance) trendsChartInstance.destroy();
+            trendsChartInstance = new Chart(ctx, {
+                type: 'line',
+                data: { labels, datasets },
+                options: { responsive: true, plugins: { legend: { position: 'top' } }, scales: { y: { beginAtZero: true, max: 100 } } }
+            });
+        }
+        
+        // --- Utility Functions ---
+        function isValidUrl(string) { 
+            try { 
+                const newUrl = new URL(string);
+                return newUrl.protocol === 'http:' || newUrl.protocol === 'https:';
+            } catch (_) { 
+                return false; 
+            } 
+        }
+        
+        function createCategoryCardHTML(categoryData) {
+            if (!categoryData) return '';
+            const { title, icon, score, issues } = categoryData;
+            const colors = getScoreColor(score, true);
+            return `
+                <div class="rounded-2xl p-4 border ${colors.border} ${colors.bg}">
+                    <div class="flex flex-col h-full">
+                        <div class="flex justify-between items-start">
+                            <div class="flex items-center gap-2">
+                                <i data-lucide="${icon}" class="w-5 h-5 ${colors.text}"></i>
+                                <h3 class="text-md font-bold ${colors.text}">${title}</h3>
+                            </div>
+                            <p class="text-xl font-bold ${colors.text} ml-2">${score}</p>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-2 mt-3">
+                            <div class="${colors.progress} h-2 rounded-full" style="width: ${score}%"></div>
+                        </div>
+                        <p class="text-xs ${colors.text} opacity-80 mt-2 flex-grow">${(issues || []).length} issues found</p>
+                    </div>
+                </div>`;
+        }
+        
+        function createRadarChart(auditData) {
+            const ctx = document.getElementById('radar-chart').getContext('2d');
+            const data = {
+                labels: Object.keys(AUDIT_CATEGORIES).map(key => AUDIT_CATEGORIES[key].name),
+                datasets: [
+                    {
+                        label: 'Your Website Score',
+                        data: Object.keys(AUDIT_CATEGORIES).map(key => auditData[key]?.score || 0),
+                        fill: true,
+                        backgroundColor: 'rgba(79, 70, 229, 0.2)',
+                        borderColor: 'rgb(79, 70, 229)',
+                        pointBackgroundColor: 'rgb(79, 70, 229)',
+                        pointBorderColor: '#fff',
+                        pointHoverBackgroundColor: '#fff',
+                        pointHoverBorderColor: 'rgb(79, 70, 229)'
+                    }
+                ]
+            };
+            if (radarChartInstance) {
+                radarChartInstance.destroy();
+            }
+            radarChartInstance = new Chart(ctx, {
+                type: 'radar',
+                data: data,
+                options: {
+                    elements: { line: { borderWidth: 3 } },
+                    scales: { r: { angleLines: { display: false }, suggestedMin: 0, suggestedMax: 100, pointLabels: { font: { size: 14 } } } },
+                    plugins: { legend: { position: 'top' } }
+                }
+            });
+        }
+
+        function getPriorityBadge(priority) {
+            switch (priority) {
+                case 'critical': return '<span class="bg-red-100 text-red-800 text-xs font-medium me-2 px-2.5 py-0.5 rounded-full">Critical</span>';
+                case 'medium': return '<span class="bg-yellow-100 text-yellow-800 text-xs font-medium me-2 px-2.5 py-0.5 rounded-full">Medium</span>';
+                case 'low': return '<span class="bg-blue-100 text-blue-800 text-xs font-medium me-2 px-2.5 py-0.5 rounded-full">Low</span>';
+                default: return '';
+            }
+        }
+
+        function getScoreColor(score, forCard = false, forMainCard = false) {
+            score = score || 0;
+            if (forMainCard) {
+                if (score < 50) return 'bg-red-600';
+                if (score < 90) return 'bg-yellow-500';
+                return 'bg-indigo-600';
+            }
+            if (forCard) {
+                if (score < 50) return { bg: 'bg-red-50', border: 'border-red-200', text: 'text-red-800', progress: 'bg-red-500' };
+                if (score < 90) return { bg: 'bg-yellow-50', border: 'border-yellow-300', text: 'text-yellow-800', progress: 'bg-yellow-400' };
+                return { bg: 'bg-green-50', border: 'border-green-200', text: 'text-green-800', progress: 'bg-green-500' };
+            }
+            if (score < 50) return 'text-red-500';
+            if (score < 90) return 'text-yellow-500';
+            return 'text-green-500';
+        }
+
+        async function exportToPDF() { 
+            const exportBtn = document.getElementById('export-pdf-btn');
+            exportBtn.innerHTML = '<div class="spinner w-5 h-5"></div> Exporting...';
+            exportBtn.disabled = true;
+            const reportContent = document.getElementById('report-content-wrapper');
+            try {
+                const canvas = await html2canvas(reportContent, { scale: 2 });
+                const imgData = canvas.toDataURL('image/png');
+                const pdf = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
+                const pdfWidth = pdf.internal.pageSize.getWidth();
+                const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+                pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+                pdf.save(`Website-Audit-Report-${new URL(urlInput.value || 'report').hostname}.pdf`);
+            } catch (error) {
+                console.error("PDF Export failed:", error);
+                alert("Sorry, there was an error creating the PDF.");
+            } finally {
+                exportBtn.innerHTML = '<i data-lucide="download" class="w-4 h-4 mr-2"></i>Export';
+                lucide.createIcons();
+                exportBtn.disabled = false;
+            }
+         }
+        function renderCategoryChecks(categoryId) { 
+            const category = AUDIT_CATEGORIES[categoryId];
+            let html = `<h2 class="text-3xl font-bold text-gray-900 mb-6">${category.name} Checks</h2>`;
+            html += '<div class="space-y-3">';
+            category.checks.forEach(check => {
+                html += `
+                    <div class="bg-white p-4 rounded-xl border border-gray-200 flex items-center gap-3">
+                        <i data-lucide="check-circle" class="w-5 h-5 text-green-500"></i>
+                        <span class="text-gray-700">${check}</span>
+                    </div>
+                `;
+            });
+            html += '</div>';
+            categoryChecksSection.innerHTML = html;
+            lucide.createIcons();
+         }
+        function renderAiIntegrationContent() {
+            aiIntegrationSection.innerHTML = `
+                <div class="bg-white p-8 rounded-2xl shadow-lg border border-gray-200">
+                    <div class="text-center">
+                        <div class="inline-block bg-purple-100 p-3 rounded-xl">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-purple-600"><path d="M12 3V1m0 22v-2m4.6-4.6L20 20M4 4l3.4 3.4M1 12h2m18 0h2M4.6 19.4L8 16M20 4l-3.4 3.4"></path></svg>
+                        </div>
+                        <h2 class="text-3xl font-bold text-gray-900 mt-4">Gemini AI Integration</h2>
+                        <p class="text-gray-500 mt-2 max-w-2xl mx-auto">This application leverages the power of Google's Gemini AI to transform your audit results into actionable, expert-level advice.</p>
+                    </div>
+                    <div class="mt-8 space-y-6 text-gray-700">
+                        <div>
+                            <h3 class="text-xl font-semibold text-gray-800">What does Gemini do?</h3>
+                            <p class="mt-2">After your website audit is complete, the raw data—including all identified issues and their priorities—is sent to the Gemini model. It acts as an expert web development consultant to analyze these findings.</p>
+                        </div>
+                        <div>
+                            <h3 class="text-xl font-semibold text-gray-800">Your Personalized Action Plan</h3>
+                            <p class="mt-2">The result is a clear, prioritized, and step-by-step action plan, which you can find in the "Gemini Solution" tab of your report. Instead of just seeing a list of problems, you get a logical guide on what to fix first and why it's important, helping you improve your site's health efficiently.</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+         }
+        
+        initializeApp();
+    </script>
+</body>
+</html>
